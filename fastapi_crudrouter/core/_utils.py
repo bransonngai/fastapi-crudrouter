@@ -42,17 +42,34 @@ def schema_factory(
     """
     Is used to create a CreateSchema which does not contain pk
     """
-
-    fields = {
-        f.name: (f.type_, ...)
-        for f in schema_cls.__fields__.values()
-        if f.name != pk_field_name
-    }
-
+    fields = {}
+    
+    # Handle Pydantic v2
+    if hasattr(schema_cls, "model_fields"):
+        fields = {
+            field_name: (field_info.annotation, ...)
+            for field_name, field_info in schema_cls.model_fields.items()
+            if field_name != pk_field_name
+        }
+    # Fallback to Pydantic v1
+    elif hasattr(schema_cls, "__fields__"):
+        fields = {
+            f.name: (f.type_, ...)
+            for f in schema_cls.__fields__.values()
+            if f.name != pk_field_name
+        }
+    
     name = schema_cls.__name__ + name
-    schema: Type[T] = create_model(__model_name=name, **fields)  # type: ignore
-    return schema
+    
+    # Handle different create_model signatures between Pydantic v1 and v2
+    try:
+        # Try Pydantic v2 signature first
+        schema: Type[T] = create_model(name, **fields)  # type: ignore
+    except TypeError:
+        # Fall back to Pydantic v1 signature
+        schema: Type[T] = create_model(__model_name=name, **fields)  # type: ignore
 
+    return schema
 
 def create_query_validation_exception(field: str, msg: str) -> HTTPException:
     return HTTPException(

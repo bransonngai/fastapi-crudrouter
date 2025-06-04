@@ -37,6 +37,12 @@ FastAPI-CRUDRouter is **lighting fast**, well tested, and **production ready**.
 pip install fastapi-crudrouter
 ```
 
+```bash
+:: under windows
+set PYTHONUTF8=1
+pip install git+file:///{path_to_your}PythonRepo\\fastapi-crudrouter#egg=fastapi-crudrouter --no-cache-dir
+```
+
 ## Basic Usage
 Below is a simple example of what the CRUDRouter can do. In just ten lines of code, you can generate all 
 the crud routes you need for any model. A full list of the routes generated can be found [here](https://fastapi-crudrouter.awtkns.com/routing).
