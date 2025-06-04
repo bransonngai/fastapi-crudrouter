@@ -1,4 +1,5 @@
-from typing import Optional, Type, Any
+"""Patch for fastapi-crudrouter to work with Pydantic v2"""
+from typing import Optional, Type, Any, Dict, List, get_type_hints
 
 from fastapi import Depends, HTTPException
 from pydantic import create_model
@@ -12,11 +13,27 @@ class AttrDict(dict):  # type: ignore
         self.__dict__ = self
 
 
-def get_pk_type(schema: Type[PYDANTIC_SCHEMA], pk_field: str) -> Any:
-    try:
-        return schema.__fields__[pk_field].type_
-    except KeyError:
-        return int
+def get_pk_type(schema: Type["BaseModel"], pk_field: str) -> type:
+    """
+    Get the type of the primary key field for Pydantic v2 compatibility
+    """
+    # Get model fields - Pydantic v2 compatible way
+    model_fields = schema.model_fields if hasattr(schema, "model_fields") else {}
+
+    # Try to get the field from model_fields (Pydantic v2)
+    if model_fields and pk_field in model_fields:
+        # Get type annotation from model fields
+        field_info = model_fields[pk_field]
+        # Get annotation
+        return field_info.annotation
+
+    # Fallback to type hints
+    type_hints = get_type_hints(schema)
+    if pk_field in type_hints:
+        return type_hints[pk_field]
+
+    # Default to int if we can't determine
+    return int
 
 
 def schema_factory(
